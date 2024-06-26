@@ -5,7 +5,8 @@ use rocket::http::{Header, Status};
 use rocket::serde::json::Json;
 use rocket::{launch, routes, Request, Response};
 use serde::{Deserialize, Serialize};
-use ssh_key::{certificate, rand_core::OsRng, Algorithm, PrivateKey, PublicKey};
+use ssh_key::{certificate, rand_core::OsRng, PrivateKey, PublicKey};
+use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[macro_use]
@@ -21,7 +22,13 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
 
     let public_key = PublicKey::from_openssh(encoded_key)?;
 
-    let ca_key = PrivateKey::random(&mut OsRng, Algorithm::Ed25519)?;
+    let ca_host_sign_key = PrivateKey::from_openssh(
+        env::var("ROCKET_HOST_SIGN_KEY").expect("ROCKET_HOST_SIGN_KEY must be set in .env file"),
+    )?;
+
+    let ca_user_sign_key = PrivateKey::from_openssh(
+        env::var("ROCKET_USER_SIGN_KEY").expect("ROCKET_USER_SIGN_KEY must be set in .env file"),
+    )?;
 
     let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let valid_before = valid_after + (365 * 86400);
@@ -45,7 +52,7 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     cert_builder.valid_principal("nobody")?;
     cert_builder.comment("nobody@example.com")?;
 
-    let cert = cert_builder.sign(&ca_key)?;
+    let cert = cert_builder.sign(&ca_host_sign_key)?;
     // println!("{}", cert.to_string());
     Ok(cert.to_string())
 }
