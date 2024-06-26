@@ -3,10 +3,12 @@ use rocket::fairing::{Fairing, Info, Kind};
 use rocket::fs::FileServer;
 use rocket::http::{Header, Status};
 use rocket::serde::json::Json;
-use rocket::{launch, routes, Request, Response};
+use rocket::{Request, Response};
 use serde::{Deserialize, Serialize};
+use ssh_key::Certificate;
 use ssh_key::{certificate, rand_core::OsRng, PrivateKey, PublicKey};
 use std::env;
+use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[macro_use]
@@ -20,15 +22,22 @@ fn index() -> String {
 fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::error::Error>> {
     dotenv().ok();
 
-    let public_key = PublicKey::from_openssh(encoded_key)?;
+    let public_key: PublicKey = PublicKey::from_openssh(encoded_key)?;
 
-    let ca_host_sign_key = PrivateKey::from_openssh(
-        env::var("ROCKET_HOST_SIGN_KEY").expect("ROCKET_HOST_SIGN_KEY must be set in .env file"),
-    )?;
+    let user_key_file_path: String =
+        env::var("ROCKET_USER_SIGN_KEY_FILE").expect("ROCKET_USER_SIGN_KEY_FILE must be set");
+    let host_key_file_path: String =
+        env::var("ROCKET_HOST_SIGN_KEY_FILE").expect("ROCKET_HOST_SIGN_KEY_FILE must be set");
 
-    let ca_user_sign_key = PrivateKey::from_openssh(
-        env::var("ROCKET_USER_SIGN_KEY").expect("ROCKET_USER_SIGN_KEY must be set in .env file"),
-    )?;
+    let ca_user_signing_key: String =
+        fs::read_to_string(user_key_file_path).expect("Failed to read user private key file");
+    let ca_host_signing_key: String =
+        fs::read_to_string(host_key_file_path).expect("Failed to read host private key file");
+
+    let ca_host_key: PrivateKey = PrivateKey::from_openssh(ca_host_signing_key)?;
+    let ca_user_key: PrivateKey = PrivateKey::from_openssh(ca_user_signing_key)?;
+
+    let ca_key = if is_host { &ca_host_key } else { &ca_user_key };
 
     let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let valid_before = valid_after + (365 * 86400);
@@ -52,8 +61,8 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     cert_builder.valid_principal("nobody")?;
     cert_builder.comment("nobody@example.com")?;
 
-    let cert = cert_builder.sign(&ca_host_sign_key)?;
-    // println!("{}", cert.to_string());
+    let cert: Certificate = cert_builder.sign(ca_key)?;
+    println!("{}", cert.to_string());
     Ok(cert.to_string())
 }
 
@@ -66,16 +75,9 @@ struct SignRequest {
 
 #[post("/handle-post", data = "<data>")]
 fn handle_post(data: Json<SignRequest>) -> String {
-    println!("Received POST request: {:?}", data);
     match sign_key(data.public_key.as_str(), data.is_host) {
-        Ok(cert) => {
-            // println!("Certificate generated successfully");
-            cert.to_string()
-        }
-        Err(err) => {
-            println!("Error generating certificate: {}", err);
-            err.to_string()
-        }
+        Ok(cert) => cert.to_string(),
+        Err(err) => err.to_string(),
     }
 }
 
@@ -86,6 +88,8 @@ fn options() -> Status {
 
 #[launch]
 fn rocket() -> _ {
+    dotenv().ok(); // Load environment variables from .env file
+
     rocket::build()
         .attach(Cors)
         .mount("/", routes![index, handle_post, options])
@@ -116,7 +120,6 @@ impl Fairing for Cors {
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
 }
-
 // #[post("/user-cert", format = "json")]
 // #[get("/host-sign-key")]
 // fn host_sign_key_api() -> Result<Vec<u8>, String> {
