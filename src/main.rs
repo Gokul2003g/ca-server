@@ -1,6 +1,9 @@
 use dotenv::dotenv;
+use rocket::fairing::{Fairing, Info, Kind};
 use rocket::fs::FileServer;
+use rocket::http::{Header, Status};
 use rocket::serde::json::Json;
+use rocket::{launch, routes, Request, Response};
 use serde::{Deserialize, Serialize};
 use ssh_key::{certificate, rand_core::OsRng, Algorithm, PrivateKey, PublicKey};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -20,9 +23,6 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
 
     let ca_key = PrivateKey::random(&mut OsRng, Algorithm::Ed25519)?;
 
-    // let ca_user_signing_key = env::var("USER_SIGNING_KEY").expect("Not set");
-    // let ca_user_sign_key = PrivateKey::from_openssh(&ca_user_signing_key)?;
-
     let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let valid_before = valid_after + (365 * 86400);
 
@@ -32,34 +32,81 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
         valid_after,
         valid_before,
     )?;
-    cert_builder.serial(42)?; // Setting serial number
-    cert_builder.key_id("nobody-cert-02")?; // Setting key identifier
+
+    cert_builder.serial(42)?;
+    cert_builder.key_id("nobody-cert-02")?;
+
     if is_host {
-        cert_builder.cert_type(certificate::CertType::Host)?; // Setting certificate type
+        cert_builder.cert_type(certificate::CertType::Host)?;
     } else {
-        cert_builder.cert_type(certificate::CertType::User)?; // Setting certificate type
+        cert_builder.cert_type(certificate::CertType::User)?;
     }
-    cert_builder.valid_principal("nobody")?; // Setting valid principal
-    cert_builder.comment("nobody@example.com")?; // Setting comment
+
+    cert_builder.valid_principal("nobody")?;
+    cert_builder.comment("nobody@example.com")?;
 
     let cert = cert_builder.sign(&ca_key)?;
-    println!("{}", cert.to_string());
+    // println!("{}", cert.to_string());
     Ok(cert.to_string())
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SignRequest {
-    identity: String,
-    host: bool,
-    validity: String,
     public_key: String,
+    is_host: bool,
+    identity: String,
 }
 
 #[post("/handle-post", data = "<data>")]
 fn handle_post(data: Json<SignRequest>) -> String {
-    match sign_key(data.public_key.as_str(), data.host) {
-        Ok(cert) => cert.to_string(),
-        Err(err) => err.to_string(),
+    println!("Received POST request: {:?}", data);
+    match sign_key(data.public_key.as_str(), data.is_host) {
+        Ok(cert) => {
+            // println!("Certificate generated successfully");
+            cert.to_string()
+        }
+        Err(err) => {
+            println!("Error generating certificate: {}", err);
+            err.to_string()
+        }
+    }
+}
+
+#[options("/handle-post")]
+fn options() -> Status {
+    Status::Ok
+}
+
+#[launch]
+fn rocket() -> _ {
+    rocket::build()
+        .attach(Cors)
+        .mount("/", routes![index, handle_post, options])
+        .mount(
+            "/public",
+            FileServer::from("/home/gokul/dev/ca-server/keys/"),
+        )
+}
+
+pub struct Cors;
+
+#[rocket::async_trait]
+impl Fairing for Cors {
+    fn info(&self) -> Info {
+        Info {
+            name: "Cross-Origin-Resource-Sharing Fairing",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, PATCH, PUT, DELETE, HEAD, OPTIONS, GET",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
 }
 
@@ -110,15 +157,3 @@ fn handle_post(data: Json<SignRequest>) -> String {
 //     // Return the JSON response
 //     Ok(json!({ "User-Signing-Key": contents }))
 // }
-
-#[launch]
-fn rocket() -> _ {
-    rocket::build()
-        .mount("/", routes![index, handle_post])
-        // .mount("/", routes![user_sign_key_api])
-        // .mount("/", routes![host_sign_key_api])
-        .mount(
-            "/public",
-            FileServer::from("/home/gokul/dev/rust/practice_server/keys/"),
-        )
-}

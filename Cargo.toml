@@ -10,3 +10,4 @@ rocket = { version = "0.5.0", features = ["json"] }
 dotenv = "0.15.0"
 serde = { version = "1.0.199", features = ["derive"] }
 ssh-key = { version = "0.6.6", features = ["crypto"] }
+rocket_cors = "0.6.0"
