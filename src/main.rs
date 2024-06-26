@@ -62,7 +62,7 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     cert_builder.comment("nobody@example.com")?;
 
     let cert: Certificate = cert_builder.sign(ca_key)?;
-    println!("{}", cert.to_string());
+    // println!("{}", cert.to_string());
     Ok(cert.to_string())
 }
 
