@@ -40,7 +40,7 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     let ca_key = if is_host { &ca_host_key } else { &ca_user_key };
 
     let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let valid_before = valid_after + (365 * 86400);
+    let valid_before = valid_after + (4);
 
     let mut cert_builder = certificate::Builder::new_with_random_nonce(
         &mut OsRng,
@@ -48,6 +48,9 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
         valid_after,
         valid_before,
     )?;
+
+    // TODO: Identity from access list
+    // TODO: Expiry time from access list
 
     cert_builder.serial(42)?;
     cert_builder.key_id("nobody-cert-02")?;
@@ -120,50 +123,3 @@ impl Fairing for Cors {
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
 }
-// #[post("/user-cert", format = "json")]
-// #[get("/host-sign-key")]
-// fn host_sign_key_api() -> Result<Vec<u8>, String> {
-//     // Define a secure path to the key file (avoid relative paths)
-//     let key_path = Path::new("/home/gokul/dev/rust/practice_server/keys/host-sign-key.pub"); // Replace with actual path
-//
-//     // Read the file contents with error handling
-//     let contents = fs::read(key_path).map_err(|err| format!("Error reading key file: {}", err))?;
-//
-//     // Return the file contents with appropriate content type
-//     Ok(contents.into_owned())
-// }
-
-// #[post("/get-user-cert", format = "plain", data = "<file>")]
-// async fn get_user_certificate(mut file: TempFile<'_>) -> Result<Value, String> {
-//     let fileContent = file
-//         .persist_to("/home/gokul/dev/rust/practice_server/signed_keys/")
-//         .await;
-//
-//     Ok(json!({"message": "done"}))
-// }
-
-// #[get("/host-sign-key", format = "json")]
-// fn host_sign_key_api() -> Result<Value, String> {
-//     // Define a secure path to the key file (avoid relative paths)
-//     let key_path = "/home/gokul/dev/rust/practice_server/keys/host-sign-key.pub"; // Replace with actual path
-//
-//     // Read the file contents with error handling
-//     let contents =
-//         fs::read_to_string(key_path).map_err(|err| format!("Error reading key file: {}", err))?;
-//
-//     // Return the JSON response
-//     Ok(json!({ "Host-Signing-Key": contents }))
-// }
-
-// #[get("/user-sign-key", format = "json")]
-// fn user_sign_key_api() -> Result<Value, String> {
-//     // Define a secure path to the key file (avoid relative paths)
-//     let key_path = "/home/gokul/dev/rust/practice_server/keys/user-sign-key.pub"; // Replace with actual path
-//
-//     // Read the file contents with error handling
-//     let contents =
-//         fs::read_to_string(key_path).map_err(|err| format!("Error reading key file: {}", err))?;
-//
-//     // Return the JSON response
-//     Ok(json!({ "User-Signing-Key": contents }))
-// }
