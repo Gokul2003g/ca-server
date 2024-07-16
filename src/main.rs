@@ -50,6 +50,7 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     )?;
 
     // TODO: Identity from access list
+    // TODO: Permitted Host and Users from accesss list
     // TODO: Expiry time from access list
 
     cert_builder.serial(42)?;
