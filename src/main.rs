@@ -40,7 +40,7 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     let ca_key = if is_host { &ca_host_key } else { &ca_user_key };
 
     let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let valid_before = valid_after + (4);
+    let valid_before = valid_after + (15 * 60);
 
     let mut cert_builder = certificate::Builder::new_with_random_nonce(
         &mut OsRng,
