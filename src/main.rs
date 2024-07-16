@@ -37,10 +37,10 @@ fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::err
     let ca_host_key: PrivateKey = PrivateKey::from_openssh(ca_host_signing_key)?;
     let ca_user_key: PrivateKey = PrivateKey::from_openssh(ca_user_signing_key)?;
 
-    let ca_key = if is_host { &ca_host_key } else { &ca_user_key };
+    let ca_key: &PrivateKey = if is_host { &ca_host_key } else { &ca_user_key };
 
-    let valid_after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let valid_before = valid_after + (15 * 60);
+    let valid_after: u64 = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    let valid_before: u64 = valid_after + (15 * 60);
 
     let mut cert_builder = certificate::Builder::new_with_random_nonce(
         &mut OsRng,
