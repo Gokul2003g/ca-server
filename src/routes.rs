@@ -20,3 +20,6 @@ pub fn handle_post(data: Json<SignRequest>) -> String {
 pub fn options() -> Status {
     Status::Ok
 }
+
+// NOTE: Github email URL : https://api.github.com/user/emails
+// NOTE: Google email URL : https://www.googleapis.com/oauth2/v2/userinfo
