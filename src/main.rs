@@ -17,10 +17,10 @@ fn rocket() -> _ {
         .attach(cors::Cors)
         .mount(
             "/",
-            routes![routes::index, routes::handle_post, routes::options],
+            routes![routes::handle_post, routes::options],
         )
         .mount(
             "/public",
-            FileServer::from("/home/gokul/dev/ca-server/keys/"),
+            FileServer::from("/home/nitin/Github/ca-server/keys/"),
         )
 }
