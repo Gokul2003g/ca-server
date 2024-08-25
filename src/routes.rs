@@ -1,13 +1,21 @@
+use crate::functions::get_email_from_provider;
 use crate::key_signer::sign_key;
 use crate::models::{BearerToken, SignRequest};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 
 #[post("/handle-post", data = "<data>")]
-pub fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequest>) -> String {
+pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequest>) -> String {
     match token {
         Ok(token) => {
             println!("Extracted Token: {}", token.0); // Logging the extracted token
+
+            // call the provider and print email
+            let email = get_email_from_provider(token.0, "google")
+                .await
+                .expect("error");
+
+            println!("{email}");
 
             match sign_key(data.public_key.as_str(), data.is_host) {
                 Ok(cert) => cert,
