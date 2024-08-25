@@ -1,8 +1,8 @@
 mod config;
 mod cors;
-mod functions;
 mod key_signer;
 mod models;
+mod oauth_provider;
 mod routes;
 
 use std::env;

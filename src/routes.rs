@@ -1,6 +1,6 @@
-use crate::functions::get_email_from_provider;
 use crate::key_signer::sign_key;
 use crate::models::{BearerToken, SignRequest};
+use crate::oauth_provider::get_email_from_provider;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 
@@ -8,10 +8,8 @@ use rocket::serde::json::Json;
 pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequest>) -> String {
     match token {
         Ok(token) => {
-            println!("Extracted Token: {}", token.0); // Logging the extracted token
-
-            // call the provider and print email
-            let email = get_email_from_provider(token.0, "google")
+            // call the provider and get email
+            let email = get_email_from_provider(token.0, data.provider.as_str())
                 .await
                 .expect("error");
 
@@ -33,6 +31,3 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
 pub fn options() -> Status {
     Status::Ok
 }
-
-// NOTE: Github email URL : https://api.github.com/user/emails
-// NOTE: Google email URL : https://www.googleapis.com/oauth2/v2/userinfo
