@@ -31,7 +31,11 @@ pub async fn get_email_from_provider(
             }
             "github" => {
                 let emails: Vec<Value> = serde_json::from_str(&response_body)?;
+
                 // Find the primary email and get its string value
+                // Convert the resopnse which is an array of objects
+                // into a vector and find primary email from it
+                // Primary email has primary set to true in the object body
                 let primary_email: String = emails
                     .into_iter()
                     .find(|e| e["primary"].as_bool().unwrap_or(false))
