@@ -14,6 +14,7 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
                 .expect("error");
 
             println!("{email}");
+
             // TODO: check if email is present in ACL
             // TODO: Verify if email received is same as sent from user
             // TODO: retrieve host array and validity time if present
