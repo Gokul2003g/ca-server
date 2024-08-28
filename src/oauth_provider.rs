@@ -1,4 +1,7 @@
-use reqwest::{header::HeaderMap, Client};
+use reqwest::{
+    header::{HeaderMap, USER_AGENT},
+    Client,
+};
 use serde_json::Value;
 use std::env;
 use std::error::Error;
@@ -18,12 +21,16 @@ pub async fn get_email_from_provider(
         _ => return Err("Provider not supported".into()),
     };
 
+    // Add User-Agent header for GitHub
+    if provider == "github" {
+        headers.insert(USER_AGENT, "sshgo".parse()?);
+    }
+
     let response = client.get(&url).headers(headers).send().await?;
 
     if response.status().is_success() {
         let response_body = response.text().await?;
 
-        // Extract email based on provider
         let email = match provider {
             "google" => {
                 let user_info: Value = serde_json::from_str(&response_body)?;
