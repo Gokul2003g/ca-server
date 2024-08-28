@@ -42,7 +42,9 @@ pub fn sign_key(
         valid_before,
     )?;
 
-    cert_builder.serial(42)?;
+    // Optional serial number assigned by CA.
+    // May use later
+    // cert_builder.serial(42)?;
 
     let key_id = Uuid::new_v4().to_string();
     cert_builder.key_id(key_id)?;
