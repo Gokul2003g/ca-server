@@ -16,6 +16,7 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
 
             if data.identity != email {
                 "Invalid Email".to_string();
+                return "Inavlid Email".to_string();
             }
 
             let (principals_permitted, validity) = match get_host_and_validity(&email) {
