@@ -1,4 +1,6 @@
 /target
 .env
-/keys*
+/keys
+/keys-private
+/acl
 

@@ -1,0 +1,12 @@
+[[users]]
+name = "user1"
+email = "user1@example.com"
+hosts_allowed = ["host1", "host2"]
+validity = "900"
+# validity time is in seconds
+
+[[users]]
+name = "user2"
+email = "user2@example.com"
+hosts_allowed = ["sys1, sys2"]
+validity = "600"

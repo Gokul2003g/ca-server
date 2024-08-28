@@ -1,3 +1,4 @@
+use crate::acl::get_host_and_validity;
 use crate::key_signer::sign_key;
 use crate::models::{BearerToken, SignRequest};
 use crate::oauth_provider::get_email_from_provider;
@@ -13,11 +14,34 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
                 .await
                 .expect("error");
 
-            println!("{email}");
+            if data.identity != email {
+                "Invalid Email".to_string();
+                return "Inavlid Email".to_string();
+            }
 
-            match sign_key(data.public_key.as_str(), data.is_host) {
+            let (principals_permitted, validity) = match get_host_and_validity(&email) {
+                Ok((hosts, validity)) => (hosts, validity),
+                Err(err) => {
+                    println!("{err}");
+                    return "Invalic email address".to_string();
+                }
+            };
+
+            println!("{principals_permitted:?}");
+            println!("{validity}");
+
+            match sign_key(
+                data.public_key.as_str(),
+                data.is_host,
+                &data.identity,
+                principals_permitted,
+                validity,
+            ) {
                 Ok(cert) => cert,
-                Err(err) => err.to_string(),
+                Err(err) => {
+                    println!("{}", err);
+                    "Invalid Public Key".to_string()
+                }
             }
         }
         Err(status) => {
