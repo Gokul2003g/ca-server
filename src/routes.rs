@@ -37,7 +37,10 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
                 validity,
             ) {
                 Ok(cert) => cert,
-                Err(err) => err.to_string(),
+                Err(err) => {
+                    println!("{}", err);
+                    "Invalid Public Key".to_string()
+                }
             }
         }
         Err(status) => {
