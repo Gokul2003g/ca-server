@@ -4,8 +4,16 @@ use std::env;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub fn sign_key(encoded_key: &str, is_host: bool) -> Result<String, Box<dyn std::error::Error>> {
+pub fn sign_key(
+    encoded_key: &str,
+    is_host: bool,
+    email: &String,
+    principals_permitted: Vec<String>,
+    validity: String,
+) -> Result<String, Box<dyn std::error::Error>> {
     let public_key: PublicKey = PublicKey::from_openssh(encoded_key)?;
+
+    println!("{} {:?} {}", email, principals_permitted, validity);
 
     let user_key_file_path: String =
         env::var("ROCKET_USER_SIGN_KEY_FILE").expect("ROCKET_USER_SIGN_KEY_FILE must be set");

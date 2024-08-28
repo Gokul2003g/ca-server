@@ -10,6 +10,19 @@ pub struct SignRequest {
     pub provider: String,
 }
 
+#[derive(Deserialize)]
+pub struct User {
+    pub name: String,
+    pub email: String,
+    pub hosts_allowed: Vec<String>,
+    pub validity: String,
+}
+
+#[derive(Deserialize)]
+pub struct Acl {
+    pub users: Vec<User>,
+}
+
 #[derive(Debug)]
 pub struct BearerToken(pub String);
 

@@ -19,7 +19,10 @@ impl Fairing for Cors {
             "Access-Control-Allow-Methods",
             "POST, GET ,PATCH, PUT, DELETE, HEAD, OPTIONS ",
         ));
-        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Headers",
+            "Authorization, Content-Type, Accept",
+        ));
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
     }
 }
