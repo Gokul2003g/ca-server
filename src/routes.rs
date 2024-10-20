@@ -8,6 +8,7 @@ use rocket::serde::json::Json;
 #[post("/handle-post", data = "<data>")]
 pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequest>) -> String {
     match token {
+        // NOTE: Remove the hardcodedToken
         Ok(token) => {
             println!("{}", token.0);
             let email: String = if token.0 == "hardcodedToken" {
