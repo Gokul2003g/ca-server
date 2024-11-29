@@ -11,6 +11,7 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
         // NOTE: Remove the hardcodedToken
         Ok(token) => {
             println!("{}", token.0);
+            println!("Reached line 14");
             let email: String = if token.0 == "hardcodedToken" {
                 data.identity.clone()
             } else {
@@ -29,7 +30,7 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
                 Ok((hosts, validity)) => (hosts, validity),
                 Err(err) => {
                     println!("{err}");
-                    return "Invalic email address".to_string();
+                    return "Invalid email address".to_string();
                 }
             };
 
