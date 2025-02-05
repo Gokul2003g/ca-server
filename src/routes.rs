@@ -9,9 +9,7 @@ use rocket::serde::json::Json;
 pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequest>) -> String {
     match token {
         // NOTE: Remove the hardcodedToken
-        Ok(token) => {
-            println!("{}", token.0);
-            println!("Reached line 14");
+        Ok(token) => { 
             let email: String = if token.0 == "hardcodedToken" {
                 data.identity.clone()
             } else {
@@ -62,3 +60,4 @@ pub async fn handle_post(token: Result<BearerToken, Status>, data: Json<SignRequ
 pub fn options() -> Status {
     Status::Ok
 }
+
