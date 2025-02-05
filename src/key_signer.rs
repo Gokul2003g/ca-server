@@ -4,6 +4,19 @@ use std::env;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+use chrono::Utc;
+use log::info;
+use serde::Serialize;
+use std::fs::OpenOptions;
+use std::io::Write;
+
+#[derive(Serialize)]
+struct CertificateLog {
+    email: String,
+    cert_type: String,
+    timestamp: String,
+    principals: Vec<String>,
+}
 
 pub fn sign_key(
     encoded_key: &str,
@@ -62,5 +75,29 @@ pub fn sign_key(
     cert_builder.comment(email.to_string())?;
 
     let cert: Certificate = cert_builder.sign(ca_key)?;
+    //println!("Certificate generated successfully:\n{:?}", cert);
+
+    let log_entry = CertificateLog {
+        email: email.clone(),
+        cert_type: if is_host { "Host".to_string() } else { "User".to_string() },
+        timestamp: Utc::now().to_rfc3339(),
+        principals: principals_permitted.clone(),
+    };
+
+    let yaml_entry = serde_yaml::to_string(&log_entry)?;
+
+    let mut file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open("certificates.yml")
+        .expect("Failed to open or create certificates.yml");
+
+    writeln!(file, "---\n{}", yaml_entry).expect("Failed to write to certificates.yml");
+
+    info!(
+        "Certificate generated for {}: type={}, principals={:?}",
+        email, log_entry.cert_type, principals_permitted
+    );
+
     Ok(cert.to_string())
 }
